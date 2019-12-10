@@ -10,9 +10,15 @@ describe('Sailthru', function() {
   var analytics;
   var sailthru;
   var options = {
-    customerId: 'AJ1WTFKFAMAG8045ZXSQ9GMK',
+    clientId: 'AJ1WTFKFAMAG8045ZXSQ9GMK',
     apiKey: 'asdfasdfasdf',
-    apiSecret: 'asdfasdfasd'
+    apiSecret: 'asdfasdfasd',
+    productBaseUrl: 'https://www.example.com/product/path',
+    optoutValue: 'none',
+    defaultListName: 'test_list',
+    sendTemplate: 'twitter_welcome',
+    reminderTemplate: 'abandoned cart',
+    reminderTime: '20 minutes'
   };
 
   beforeEach(function() {
@@ -33,9 +39,15 @@ describe('Sailthru', function() {
   it('should have the correct options', function() {
     analytics.compare(Sailthru, integration('Sailthru')
       .global('Sailthru')
-      .option('customerId', '')
+      .option('clientId', '')
       .option('apiKey', '')
-      .option('apiSecret', ''));
+      .option('secret', '')
+      .option('productBaseUrl', '')
+      .option('optoutValue', '')
+      .option('defaultListName', '')
+      .option('sendTemplate', '')
+      .option('reminderTemplate', '')
+      .option('reminderTime', ''));
   });
 
   describe('before loading', function() {
