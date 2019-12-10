@@ -14,7 +14,7 @@ describe('Sailthru', function() {
     apiKey: 'asdfasdfasdf',
     apiSecret: 'asdfasdfasd',
     productBaseUrl: 'https://www.example.com/product/path',
-    optoutValue: 'none',
+    optoutValue: 'basic',
     defaultListName: 'test_list',
     sendTemplate: 'twitter_welcome',
     reminderTemplate: 'abandoned cart',
@@ -43,7 +43,7 @@ describe('Sailthru', function() {
       .option('apiKey', '')
       .option('secret', '')
       .option('productBaseUrl', '')
-      .option('optoutValue', '')
+      .option('optoutValue', 'none')
       .option('defaultListName', '')
       .option('sendTemplate', '')
       .option('reminderTemplate', '')
@@ -102,19 +102,25 @@ describe('Sailthru', function() {
       it('shoulld sign up user', function() {
         var traits = {
           key : '123',
-          email: 'jonny@gmailtest.com',
-          lists : { testing1: 'asdf', testing2 : 'asdf' },
-          vars : { },
+          email: 'test_user@gmailtest.com',
           source : 'home'
         };
-        analytics.identify('johny1234', traits);
+        analytics.identify('test_user1234', traits);
         analytics.called(sailthru._integration, 'userSignUp', {
-          id: 'johny1234',
-          key : '123',
-          email: 'jonny@gmailtest.com',
-          lists : { testing1: 'asdf', testing2 : 'asdf' },
-          vars : { },
-          source : 'home'
+          keys: {
+            email: 'test_user@gmailtest.com',
+            extid: 'test_user1234'
+          },
+          vars : {
+            key: '123',
+            email: 'test_user@gmailtest.com',
+            source: 'home',
+            id: 'test_user1234'
+          },
+          optout_email: 'basic',
+          keysconflict: 'merge',
+          email: 'test_user@gmailtest.com',
+          lists : { test_list: 1 }
         });
       });
     });
@@ -123,19 +129,20 @@ describe('Sailthru', function() {
       it('should create a custom event', function() {
         var props = {
           id : 'john1234',
-          email : 'jonny@gmailtest.com',
+          email : 'test_user@gmailtest.com',
           vars: {
             lemon: 'tester'
           }
         };
         analytics.track('someReallyUseFulEvent', props);
         analytics.called(sailthru._integration, 'customEvent', {
-          id: 'john1234',
-          email: 'jonny@gmailtest.com',
+          name: 'someReallyUseFulEvent',
           vars: {
-            lemon: 'tester'
+            id: 'john1234',
+            email: 'test_user@gmailtest.com',
+            vars: '{\'lemon\':\'tester\'}'
           },
-          name: 'someReallyUseFulEvent'
+          email: 'test_user@gmailtest.com'
         });
       });
     });
