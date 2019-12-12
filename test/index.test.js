@@ -15,9 +15,9 @@ describe('Sailthru', function() {
     apiSecret: 'asdfasdfasd',
     productBaseUrl: 'https://www.example.com/product/path',
     optoutValue: 'basic',
-    defaultListName: 'test_list',
-    sendTemplate: 'twitter_welcome',
-    reminderTemplate: 'abandoned cart',
+    defaultListName: 'test-list',
+    sendTemplate: 'test-send',
+    reminderTemplate: 'test-reminder',
     reminderTime: '20 minutes'
   };
 
@@ -116,14 +116,12 @@ describe('Sailthru', function() {
           },
           vars: {
             key: '123',
-            email: 'test_user@gmailtest.com',
-            source: 'home',
-            id: 'test_user1234'
+            source: 'home'
           },
           optout_email: 'basic',
           keysconflict: 'merge',
           lists: {
-            test_list: 1
+            'test-list': 1
           },
           email: 'test_user@gmailtest.com'
         });
@@ -133,6 +131,7 @@ describe('Sailthru', function() {
     describe('page', function() {
       it('shoulld send a pageview', function() {
         var props = {
+          tags: ['tag1', 'tag2'],
           path: '/dash',
           referrer: 'http://dev-mr.bluecode.co/dash',
           search: '',
@@ -142,7 +141,8 @@ describe('Sailthru', function() {
         analytics.page('pageview', props);
 
         analytics.called(sailthru._track, 'pageview', {
-          url: 'http://dev-mr.bluecode.co'
+          url: 'http://dev-mr.bluecode.co',
+          tags: ['tag1', 'tag2']
         });
       });
     });
@@ -329,6 +329,21 @@ describe('Sailthru', function() {
               }
             }
           ],
+          adjustments: [
+            {
+              title: 'tax',
+              price: 200
+            },
+            {
+              title: 'shipping',
+              price: 300
+            },
+            {
+              title: 'discount',
+              price: -250
+            }
+          ],
+          incomplete: 1,
           vars: {
             order_id: '50314b8e9bcf000000000000',
             affiliation: 'Google Store',
@@ -341,8 +356,8 @@ describe('Sailthru', function() {
             currency: 'USD'
           },
           email: 'testuser@gmail.com',
-          reminder_template: 'abandoned cart',
-          reminder_time: '20 minutes'    
+          reminder_template: 'test-reminder',
+          reminder_time: '20 minutes'      
         });
       });
     });
@@ -423,6 +438,20 @@ describe('Sailthru', function() {
               }
             }
           ],
+          adjustments: [
+            {
+              title: 'tax',
+              price: 200
+            },
+            {
+              title: 'shipping',
+              price: 300
+            },
+            {
+              title: 'discount',
+              price: -250
+            }
+          ],
           vars: {
             order_id: '50314b8e9bcf000000000000',
             affiliation: 'Google Store',
@@ -435,7 +464,7 @@ describe('Sailthru', function() {
             currency: 'USD'
           },
           email: 'testemail@gmail.com',
-          send_template: 'twitter_welcome'
+          send_template: 'test-send'
         });
       });
     });
