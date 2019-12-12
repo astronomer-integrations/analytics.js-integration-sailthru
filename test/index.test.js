@@ -1,10 +1,10 @@
 'use strict';
 
 var Analytics = require('@segment/analytics.js-core').constructor;
-var integrationTester = require('@segment/analytics.js-integration-tester');
-var sandbox = require('@segment/clear-env');
-var Sailthru = require('../lib/');
 var integration = require('@segment/analytics.js-integration');
+var sandbox = require('@segment/clear-env');
+var tester = require('@segment/analytics.js-integration-tester');
+var Sailthru = require('../lib/');
 
 describe('Sailthru', function() {
   var analytics;
@@ -25,7 +25,7 @@ describe('Sailthru', function() {
     analytics = new Analytics();
     sailthru = new Sailthru(options);
     analytics.use(Sailthru);
-    analytics.use(integrationTester);
+    analytics.use(tester);
     analytics.add(sailthru);
   });
 
@@ -82,7 +82,7 @@ describe('Sailthru', function() {
       });
     });
 
-    it('should call _integration', function() {
+    it('should call integration', function() {
       sailthru._integration('customEvent', { id: 'tim' });
       analytics.called(window.Sailthru.integration, 'customEvent', { id: 'tim' });
     });
@@ -94,6 +94,8 @@ describe('Sailthru', function() {
       analytics.once('ready', function() {
         analytics.stub(window.Sailthru, 'integration');
         analytics.stub(sailthru, '_integration');
+        analytics.stub(window.Sailthru, 'track');
+        analytics.stub(sailthru, '_track');
         done();
       });
     });
@@ -106,12 +108,13 @@ describe('Sailthru', function() {
           source : 'home'
         };
         analytics.identify('test_user1234', traits);
+
         analytics.called(sailthru._integration, 'userSignUp', {
           keys: {
             email: 'test_user@gmailtest.com',
             extid: 'test_user1234'
           },
-          vars : {
+          vars: {
             key: '123',
             email: 'test_user@gmailtest.com',
             source: 'home',
@@ -119,30 +122,320 @@ describe('Sailthru', function() {
           },
           optout_email: 'basic',
           keysconflict: 'merge',
-          email: 'test_user@gmailtest.com',
-          lists : { test_list: 1 }
+          lists: {
+            test_list: 1
+          },
+          email: 'test_user@gmailtest.com'
         });
       });
     });
 
-    describe('track', function() {
+    describe('page', function() {
+      it('shoulld send a pageview', function() {
+        var props = {
+          path: '/dash',
+          referrer: 'http://dev-mr.bluecode.co/dash',
+          search: '',
+          title: 'MetaRouter - Testing app',
+          url: 'http://dev-mr.bluecode.co'
+        };
+        analytics.page('pageview', props);
+
+        analytics.called(sailthru._track, 'pageview', {
+          url: 'http://dev-mr.bluecode.co'
+        });
+      });
+    });
+
+    describe('customEventTrack', function() {
       it('should create a custom event', function() {
         var props = {
-          id : 'john1234',
-          email : 'test_user@gmailtest.com',
-          vars: {
-            lemon: 'tester'
-          }
+          email: 'testuser@gmail.com',
+          'list id': 'todays_deals_may_11_2016',
+          filters: [
+            {
+              type: 'department',
+              value: 'beauty'
+            },
+            {
+              type: 'price',
+              value: 'under-$25'
+            }
+          ],
+          sorts: [
+            {
+              type: 'price',
+              value: 'desc'
+            }
+          ],
+          products: [
+            {
+              product_id: '507f1f77bcf86cd798439011',
+              sku: '45360-32',
+              name: 'Dove Facial Powder',
+              price: 12.6,
+              position: 1,
+              category: 'Beauty',
+              url: 'https://www.example.com/product/path',
+              image_url: 'https://www.example.com/product/path.jpg'
+            },
+            {
+              product_id: '505bd76785ebb509fc283733',
+              sku: '46573-32',
+              name: 'Artin Hairbrush',
+              price: 7.6,
+              position: 2,
+              category: 'Beauty'
+            }
+          ]
         };
-        analytics.track('someReallyUseFulEvent', props);
+        analytics.track('productListFiltered', props);
         analytics.called(sailthru._integration, 'customEvent', {
-          name: 'someReallyUseFulEvent',
+          name: 'productListFiltered',
           vars: {
-            id: 'john1234',
-            email: 'test_user@gmailtest.com',
-            vars: '{\'lemon\':\'tester\'}'
+            'list id': 'todays_deals_may_11_2016',
+            filters_0_type: 'department',
+            filters_0_value: 'beauty',
+            filters_1_type: 'price',
+            filters_1_value: 'under-$25',
+            sorts_0_type: 'price',
+            sorts_0_value: 'desc',
+            products_0_product_id: '507f1f77bcf86cd798439011',
+            products_0_sku: '45360-32',
+            products_0_name: 'Dove Facial Powder',
+            products_0_price: 12.6,
+            products_0_position: 1,
+            products_0_category: 'Beauty',
+            products_0_url: 'https://www.example.com/product/path',
+            products_0_image_url: 'https://www.example.com/product/path.jpg',
+            products_1_product_id: '505bd76785ebb509fc283733',
+            products_1_sku: '46573-32',
+            products_1_name: 'Artin Hairbrush',
+            products_1_price: 7.6,
+            products_1_position: 2,
+            products_1_category: 'Beauty'
           },
-          email: 'test_user@gmailtest.com'
+          email: 'testuser@gmail.com'
+        });
+      });
+    });
+
+    describe('userSignUpConfirmedOptIn', function() {
+      it('should send a userSignUpConfirmedOptIn event', function() {
+        var props = {
+          template: 'test-send',
+          email : 'testuser@gmail.com'
+        };
+        analytics.track('userSignUpConfirmedOptIn', props);
+        analytics.called(sailthru._integration, 'userSignUpConfirmedOptIn', {
+          template: {
+            name: 'test-send'
+          },
+          email : 'testuser@gmail.com',
+          vars: {}
+        });
+      });
+    });
+
+    describe('gdprDoNotTrack', function() {
+      it('should send a gdprDoNotTrack track event', function() {
+        var props = {};
+        analytics.track('gdprDoNotTrack', props);
+        analytics.called(sailthru._track, 'gdprDoNotTrack', null);
+      });
+    });
+
+    describe('cookiesDoNotTrack', function() {
+      it('should send a cookiesDoNotTrack track event', function() {
+        var props = {};
+        analytics.track('cookiesDoNotTrack', props);
+        analytics.called(sailthru._track, 'cookiesDoNotTrack', null);
+      });
+    });
+
+    describe('orderUpdated', function() {
+      it('shoulld send an addToCart event', function() {
+        var props = {
+          email: 'testuser@gmail.com',
+          order_id: '50314b8e9bcf000000000000',
+          affiliation: 'Google Store',
+          total: 27.5,
+          revenue: 25,
+          shipping: 3,
+          tax: 2,
+          discount: 2.5,
+          coupon: 'hasbros',
+          currency: 'USD',
+          products: [
+            {
+              product_id: '507f1f77bcf86cd799439011',
+              sku: '45790-32',
+              name: 'Monopoly: 3rd Edition',
+              price: 19,
+              quantity: 1,
+              category: 'Games',
+              url: 'https://www.example.com/product/path',
+              image_url: 'https://www.example.com/product/path.jpg'
+            },
+            {
+              product_id: '505bd76785ebb509fc183733',
+              sku: '46493-32',
+              name: 'Uno Card Game',
+              price: 3,
+              quantity: 2,
+              category: 'Games'
+            }
+          ]
+        };
+        analytics.track('orderUpdated', props);
+        analytics.called(sailthru._integration, 'addToCart', {
+          items: [
+            {
+              qty: 1,
+              title: 'Monopoly: 3rd Edition',
+              price: 1900,
+              id: '507f1f77bcf86cd799439011',
+              url: 'https://www.example.com/product/path',
+              images: {
+                full: {
+                  url: 'https://www.example.com/product/path.jpg'
+                },
+                thumb: {
+                  url: ''
+                }
+              },
+              vars: {
+                sku: '45790-32',
+                category: 'Games'
+              }
+            },
+            {
+              qty: 2,
+              title: 'Uno Card Game',
+              price: 300,
+              id: '505bd76785ebb509fc183733',
+              url: 'http://localhost:9876/context.html/505bd76785ebb509fc183733',
+              images: {
+                full: {
+                  url: ''
+                },
+                thumb: {
+                  url: ''
+                }
+              },
+              vars: {
+                sku: '46493-32',
+                category: 'Games'
+              }
+            }
+          ],
+          vars: {
+            order_id: '50314b8e9bcf000000000000',
+            affiliation: 'Google Store',
+            total: 27.5,
+            revenue: 25,
+            shipping: 3,
+            tax: 2,
+            discount: 2.5,
+            coupon: 'hasbros',
+            currency: 'USD'
+          },
+          email: 'testuser@gmail.com',
+          reminder_template: 'abandoned cart',
+          reminder_time: '20 minutes'    
+        });
+      });
+    });
+
+    describe('orderComplete', function() {
+      it('shoulld send an purchase event', function() {
+        var props = {
+          email: 'testemail@gmail.com',
+          order_id: '50314b8e9bcf000000000000',
+          affiliation: 'Google Store',
+          total: 27.5,
+          revenue: 25,
+          shipping: 3,
+          tax: 2,
+          discount: 2.5,
+          coupon: 'hasbros',
+          currency: 'USD',
+          products: [
+            {
+              product_id: '507f1f77bcf86cd799439011',
+              sku: '45790-32',
+              name: 'Monopoly: 3rd Edition',
+              price: 19,
+              quantity: 1,
+              category: 'Games',
+              url: 'https://www.example.com/product/path',
+              image_url: 'https://www.example.com/product/path.jpg'
+            },
+            {
+              product_id: '505bd76785ebb509fc183733',
+              sku: '46493-32',
+              name: 'Uno Card Game',
+              price: 3,
+              quantity: 2,
+              category: 'Games'
+            }
+          ]
+        };
+        analytics.track('orderCompleted', props);
+        analytics.called(sailthru._integration, 'purchase', {
+          items: [
+            {
+              qty: 1,
+              title: 'Monopoly: 3rd Edition',
+              price: 1900,
+              id: '507f1f77bcf86cd799439011',
+              url: 'https://www.example.com/product/path',
+              images: {
+                full: {
+                  url: 'https://www.example.com/product/path.jpg'
+                },
+                thumb: {
+                  url: ''
+                }
+              },
+              vars: {
+                sku: '45790-32',
+                category: 'Games'
+              }
+            },
+            {
+              qty: 2,
+              title: 'Uno Card Game',
+              price: 300,
+              id: '505bd76785ebb509fc183733',
+              url: 'http://localhost:9876/context.html/505bd76785ebb509fc183733',
+              images: {
+                full: {
+                  url: ''
+                },
+                thumb: {
+                  url: ''
+                }
+              },
+              vars: {
+                sku: '46493-32',
+                category: 'Games'
+              }
+            }
+          ],
+          vars: {
+            order_id: '50314b8e9bcf000000000000',
+            affiliation: 'Google Store',
+            total: 27.5,
+            revenue: 25,
+            shipping: 3,
+            tax: 2,
+            discount: 2.5,
+            coupon: 'hasbros',
+            currency: 'USD'
+          },
+          email: 'testemail@gmail.com',
+          send_template: 'twitter_welcome'
         });
       });
     });
