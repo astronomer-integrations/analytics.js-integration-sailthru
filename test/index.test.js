@@ -104,14 +104,14 @@ describe('Sailthru', function() {
       it('shoulld sign up user', function() {
         var traits = {
           key : '123',
-          email: 'test_user@gmailtest.com',
+          email: 'testuser@gmail.com',
           source : 'home'
         };
         analytics.identify('test_user1234', traits);
 
         analytics.called(sailthru._integration, 'userSignUp', {
           keys: {
-            email: 'test_user@gmailtest.com',
+            email: 'testuser@gmail.com',
             extid: 'test_user1234'
           },
           vars: {
@@ -123,7 +123,7 @@ describe('Sailthru', function() {
           lists: {
             'test-list': 1
           },
-          email: 'test_user@gmailtest.com'
+          email: 'testuser@gmail.com'
         });
       });
     });
@@ -250,6 +250,90 @@ describe('Sailthru', function() {
         var props = {};
         analytics.track('cookiesDoNotTrack', props);
         analytics.called(sailthru._track, 'cookiesDoNotTrack', null);
+      });
+    });
+
+    describe('productAdded', function() {
+      it('should send an addToCart event', function() {
+        var props = {
+          email: 'testuser@gmail.com',
+          cart_id: 'skdjsidjsdkdj29j',
+          product_id: '507f1f77bcf86cd799439011',
+          sku: 'G-32',
+          category: 'Games',
+          name: 'Monopoly: 3rd Edition',
+          brand: 'Hasbro',
+          variant: '200 pieces',
+          price: 18.99,
+          quantity: 1,
+          coupon: 'MAYDEALS',
+          position: 3,
+          url: 'https://www.example.com/product/path',
+          image_url: 'https://www.example.com/product/path.jpg'
+        };
+        analytics.track('productAdded', props);
+        analytics.called(sailthru._integration, 'addToCart', {
+          items: [
+            {
+              qty: 1,
+              title: 'Monopoly: 3rd Edition',
+              price: 1899,
+              id: '507f1f77bcf86cd799439011',
+              url: 'https://www.example.com/product/path',
+              images: {
+                full: {
+                  url: 'https://www.example.com/product/path.jpg'
+                },
+                thumb: {
+                  url: ''
+                }
+              },
+              vars: {
+                cart_id: 'skdjsidjsdkdj29j',
+                sku: 'G-32',
+                category: 'Games',
+                brand: 'Hasbro',
+                variant: '200 pieces',
+                coupon: 'MAYDEALS',
+                position: 3
+              }
+            }
+          ],
+          incomplete: 1,
+          email: 'testuser@gmail.com',
+          reminder_template: 'test-reminder',
+          reminder_time: '20 minutes'
+        });
+      });
+    });
+
+    describe('productRemoved', function() {
+      it('should send an addToCart event', function() {
+        var props = {
+          email: 'testuser@gmail.com',
+          cart_id: 'skdjsidjsdkdj29j',
+          product_id: '507f1f77bcf86cd799439011',
+          sku: 'G-32',
+          category: 'Games',
+          name: 'Monopoly: 3rd Edition',
+          brand: 'Hasbro',
+          variant: '200 pieces',
+          price: 18.99,
+          quantity: 1,
+          coupon: 'MAYDEALS',
+          position: 3,
+          url: 'https://www.example.com/product/path',
+          image_url: 'https://www.example.com/product/path.jpg',
+          other_var: 'some value'
+        };
+        analytics.track('productRemoved', props);
+        analytics.called(sailthru._integration, 'addToCart', {
+          items: [],
+          incomplete: 1,
+          email: 'testuser@gmail.com',
+          reminder_template: 'test-reminder',
+          reminder_time: '20 minutes'
+        });
       });
     });
 
