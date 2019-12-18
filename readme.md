@@ -21,15 +21,15 @@ The Sailthru server-side destination will allow you to add users, send custom ev
 
 ### Implementation checklist
 
-**Important**: In order for this destination to work, you must have a few prerequisite configurations.
+**Important: In order for this destination to work, you must have a few prerequisite configurations.**
 
 - You must have `extid` lookup enabled in Sailthru, which usually needs to be requested from Sailthru. This is critical to enabling full functionality. If you do not do so, you will only be able to access users via their email address.
 - You must configure a `clientId` in your integration settings in order to initialize the Sailthru Javascript API Library. This value can be found in in the [API & Postbacks](https://my.sailthru.com/settings/api_postbacks) section of your Sailthru Dashboard listed as `Customer ID`.
-- Use the [**Ecommerce**](https://docs.metarouter.io/v2/clickstream/ecommerce.html) event spec to track `Order Completed`,`Order Updated`, `Product Added`, and `Product Removed`.
-- For `Product Added` and `Product Removed` events, you will need to make a request to `https://api.sailthru.com/user` to grab the items currently in the user’s cart. More information about this API call is located under the `Incomplete Purchases` section later in this document.
-  - To trigger abandoned cart campaigns, you must pass in a `reminder_time` and `reminder_template` on the `Product Added` and `Product Removed` events.
-  - The templates passed through as `send_template` or `reminder_template` must match the public name of a template configured in Sailthru’s UI.
-- Since email is the main method used by Sailthru for user identification, we recommend appending the user's email to `traits.email` or `properties.email` whenever possible in your analytics.js events. For example, if you send an identify call without a `traits.email` and only a `userId`, the profile will be created in Sailthru but you will not be able to find that user via their **User Look Up feature** or to send `Product Added`, `Product Removed` `Order Updated` and `Order Completed` events.
+- Use the [Ecommerce](https://docs.metarouter.io/v2/clickstream/ecommerce.html) event spec to track `Order Completed`,`Order Updated`, `Product Added`, and `Product Removed`.
+- For `Product Added` and `Product Removed` events, you will need to make a request to the Sailthru User API at `https://api.sailthru.com/user` to grab the items currently in the user’s cart. More information about this API call is located under the `Product Added and Product Removed` section later in this document.
+- To trigger abandoned cart campaigns, you must pass in a `reminderTime` and `reminderTemplate` on the `Product Added` and `Product Removed` events.
+- The templates passed through as `send_template` or `reminderTemplate` must match the public name of a template configured in Sailthru’s UI.
+- Since email is the main method used by Sailthru for user identification, we recommend appending the user's email to `traits.email` or `properties.email` whenever possible in your analytics.js events. For example, if you send an identify call without a `traits.email` and only a `userId`, the profile will be created in Sailthru but you will not be able to find that user via their [User Look Up](https://my.sailthru.com/reports/user_profile) feature or to send `Product Added`, `Product Removed` `Order Updated` and `Order Completed` events.
 
 ### Identify
 
@@ -44,10 +44,9 @@ Successfully sending an `identify` event will set the user's unique identifier t
 You can configure a `defaultListName` in the Metarouter UI. This will automatically assign any newly identified users to the default list that you specify. You can also pass a default in through the identify event object like so:
 
 ```javascript
-analytics.identify("38472034892",{
-    "name": "Hamurai",
-    "email": "Hamurai@gmail.com",
-    "quote": "Rick, you love those BBQs, Rick"
+analytics.identify("1234567890",{
+    "name": "Some User",
+    "email": "someuser@gmail.com"
 }, {
   integrations: {
     Sailthru: {
@@ -87,23 +86,77 @@ analytics.page('Page Name', {
 
 ### Track
 
-We map `Product Added`, `Product Removed`, and `Order Updated` events to the [/addToCart event](https://getstarted.sailthru.com/developers/api-client/javascript/#addToCart), and `Order Completed` events to the [/purchase event](https://getstarted.sailthru.com/developers/api-client/javascript/#purchase) in the Sailthru JavaScript API Library. All other Analytics.js Ecommerce Events will be sent to [/customEvent](https://getstarted.sailthru.com/developers/api-client/javascript/#customEvent) with the same name. . **Important**: You must have each event mapped in Sailthru using the [Lifecycle Optimizer](https://my.sailthru.com/lifecycle_optimizer#/) in order to leverage the custom event. Be sure that the **Status** is set to **Active**:
+We map `Product Added`, `Product Removed`, and `Order Updated` events to the [/addToCart event](https://getstarted.sailthru.com/developers/api-client/javascript/#addToCart) representing an incomplete purchase, and `Order Completed` events to the [/purchase event](https://getstarted.sailthru.com/developers/api-client/javascript/#purchase) representing a completed purchase in the Sailthru JavaScript API Library. All other Analytics.js Ecommerce Events will be sent to [/customEvent](https://getstarted.sailthru.com/developers/api-client/javascript/#customEvent) with the same name. . **Important**: You must have each event mapped in Sailthru using the [Lifecycle Optimizer](https://my.sailthru.com/lifecycle_optimizer#/) in order to leverage the custom event. Be sure that the **Status** is set to **Active**:
 
 <!-- Picture of the Lifecyle Optimizer -->
 
-<!-- Your account must have triggers or lifecycle optimizer enabled. This should be enabled when the account is setup, however, just to be sure you may need to reach out to your account representative to confirm it is enabled.
+Your account must have triggers or lifecycle optimizer enabled. This should be enabled when the account is setup, however, you may need to reach out to your account representative to confirm it is enabled.
 
-A custom event will hit the **Sailthru Lifecycle Optimizer** feature. Navigate to **Communications > Lifecycle Optimizer** in your Sailthru dashboard:
+A custom event will hit the **Sailthru Lifecycle Optimizer** feature. You can reach the Lifecycle Optimizer via this [link](https://my.sailthru.com/lifecycle_optimizer#/) or through **Communications > Lifecycle Optimizer** in your Sailthru dashboard:
 
-![sailthru-lifecycle-optimizer-2](../../../images/sailthru-lifecycle-optimizer-2.png)
+<!-- Picture of Lifecycle Optimizer dropdown in dashboard -->
 
 Configure a custom event to a new flow and trigger a follow up action to the event:
 
-![sailthru-lifecycle-optimizer-3](../../../images/sailthru-lifecycle-optimizer-3.png)
+<!-- Picture of custom event flow -->
 
-For instance, in the above example notice that the `Registered` event will add the user who trigger the event to a list.
+For instance, in the above example notice that the `Registered` event will add the user who triggered the event to a list.
 
-### Purchases
+### Product Added and Product Removed
+
+When you `track` a `Product Added` or `Product Removed` event, we will map the event to the [addToCart](https://getstarted.sailthru.com/developers/api-client/javascript/#addToCart) event in the Sailthru JavaScript API Library. In order to successfully track when users add items to or remove items from their cart, Sailthru expects an `addToCart` event to contain a list of all items currently in the user's cart, including the item that was just added or removed.
+
+Because `Product Added` and `Product Removed` events only contain information about the item that is added or removed, you will need to first trigger a GET request to the [Sailthru User API](https://getstarted.sailthru.com/developers/api/user/) at `https://api.sailthru.com/user` to check if the user has any items currently in their cart. The request to the Sailthru User API should look something like this:
+
+```json
+{
+    "id":"example@gmail.com",
+    "fields": {
+        "purchase_incomplete": 1
+    }
+}
+```
+
+The example request will return incomplete purchase information (including items currently in the user's cart) for the user with the email `example@gmail.com`.
+
+Instructions on how to structure and authenticate requests to the Sailthru User API can be found under the [Authentication & Requests](https://getstarted.sailthru.com/developers/api-basics/technical/#Authentication_Requests) section of the Sailthru API Technical Details. To structure your request URL you will need your request JSON object (like the example given above), the format of the response (which should be `json`), your API key from the [API & Postbacks](https://my.sailthru.com/settings/api_postbacks) section of your Sailthru Dashboard, and a request signature (called `sig` by Sailthru) which is an MD5 hash constructed based on the other request parameters.
+
+If the user has an incomplete purchase, the response to the User API will contain an attribute called `items`, which is an array of objects representing items in Sailthru format. When you send a `Product Added` or `Product Removed` event, you must assign the array of items representing the user's cart from `purchase_incomplete.items` to an event property called `items`. When you do so, the product that is added or removed in the `Product Added` or `Product Removed` event will be added to or removed from the cart items assigned in `properties.items` and the updated cart will be sent to Sailthru as an incomplete purchase. **If you do not send a `properties.items` property with a `Product Added` or `Product Removed` event, the user will lose any other items currently in their cart**
+
+### Order Updated
+
+`Order Updated` events function similarly to `Product Added` and `Product Removed` events, but without the need to make an API call before sending data since the event contains all the items currently in a user's cart.
+
+### Abandoned Cart Events
+
+To support Sailthru's [Abandoned Carts](https://getstarted.sailthru.com/lo/automate-abandoned-cart-reminders/) system, we offer the option to configure a `reminderTemplate` and `reminderTime` for `Product Added`, `Product Removed`, and `Order Updated` events. These are transactional emails to be sent when a user "abandons" their cart, or has an incomplete purchase on their account for a certain period of time. Both values are configured in the [MetaRouter UI](http://app.metarouter.io/). If you configure a `reminderTemplate`, you must configure a `reminderTime` as well. The `reminderTemplate` must match the public name of a template configured in Sailthru’s UI. `reminderTime` must be a unit of time, such as `60 minutes`, `24 hrs`, or `2 weeks`.
+
+You can also pass in `reminderTemplate` and `reminderTime` as properties on the track event object or as event options like so:
+
+```javascript
+analytics.track('Product Added', {
+  cart_id: '543210',
+  product_id: '123450',
+  sku: 'G-32',
+  category: 'Games',
+  name: 'Monopoly: 3rd Edition',
+  brand: 'Hasbro',
+  variant: '200 pieces',
+  price: 18.99,
+  quantity: 1,
+  coupon: 'MAYDEALS',
+  position: 3
+}, {
+  integrations: {
+    Sailthru: {
+    'reminderTemplate': 'abandoned cart',
+    'reminderTime': '20 minutes'
+    }
+  }
+});
+```
+
+<!-- ### Purchases
 
 When you `track` an event with the name `Order Completed` or `Order Updated` using the **e-commerce tracking API**, we will send the products you’ve listed to Sailthru’s purchase log:
 
@@ -168,7 +221,6 @@ analytics.track('Order Completed', {
     variant: '200 pieces',
     price: 18.99,
     quantity: 1,
-    
     position: 3,
   ]
 }, {
@@ -241,7 +293,6 @@ The default `productBaseUrl`, which will be used as a fallback for extracting a 
 #### Addding users to a list
 
 To configure a default list name, MetaRouter exposes a setting to configure this in the UI. You can also explicitly set your own `defaultListName` through the destination option on `identify`.
-
 
 #### Reminder Time and  Reminder/Send Template
 
