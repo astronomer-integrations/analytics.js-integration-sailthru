@@ -29,7 +29,7 @@ The Sailthru server-side destination will allow you to add users, send custom ev
 - For `Product Added` and `Product Removed` events, you will need to make a request to `https://api.sailthru.com/user` to grab the items currently in the user’s cart. More information about this API call is located under the `Incomplete Purchases` section later in this document.
   - To trigger abandoned cart campaigns, you must pass in a `reminder_time` and `reminder_template` on the `Product Added` and `Product Removed` events.
   - The templates passed through as `send_template` or `reminder_template` must match the public name of a template configured in Sailthru’s UI.
-- Since email is the main method used by Sailthru for user identification, we recommend appending the user's email to `traits.email` or `properties.email` whenever possible in your analytics.js events. For example, if you send an identify call without a `traits.email` and only a `userId`, the profile will be created in Sailthru but you would not be able to find that user via their **User Look Up feature** or to send `Product Added`, `Product Removed` `Order Updated` and `Order Completed` events.
+- Since email is the main method used by Sailthru for user identification, we recommend appending the user's email to `traits.email` or `properties.email` whenever possible in your analytics.js events. For example, if you send an identify call without a `traits.email` and only a `userId`, the profile will be created in Sailthru but you will not be able to find that user via their **User Look Up feature** or to send `Product Added`, `Product Removed` `Order Updated` and `Order Completed` events.
 
 ### Identify
 
@@ -41,17 +41,33 @@ When you `identify` a user, MetaRouter will pass that user’s information to Sa
 
 Successfully sending an `identify` event will set the user's unique identifier to the `sailthru_hid` cookie in the browser to identify the user for current and future browsing sessions.
 
-You can configure a `defaultListName` in the Metarouter UI. This will automatically assign any newly identified users to the default list that you specify. The name of the default list should match one of the list names configured in the [list](https://my.sailthru.com/lists) section of your Sailthru dashboard.
+You can configure a `defaultListName` in the Metarouter UI. This will automatically assign any newly identified users to the default list that you specify. You can also pass a default in through the identify event object like so:
+
+```javascript
+analytics.identify("38472034892",{
+    "name": "Hamurai",
+    "email": "Hamurai@gmail.com",
+    "quote": "Rick, you love those BBQs, Rick"
+}, {
+  integrations: {
+    Sailthru: {
+      defaultListName: "testingList"
+    },
+  },
+});
+```
+
+The name of the default list should match one of the list names configured in the [lists](https://my.sailthru.com/lists) section of your Sailthru dashboard.
 
 <!-- Picture of Sailthru lists -->
 
 You can also configure an `optoutValue` value in the MetaRouter UI. This will set a new user's default [email optout level](https://getstarted.sailthru.com/audience/managing-users/user-optout-levels/). Valid values are `none`, `all`, `basic`, or `blast`. If no `optoutValue` is set, it will default to `none`.
 
-If you identify a user using their email address, you will be able to view that user's activity using Sailthru's [user lookup](https://my.sailthru.com/reports/user_profile/) feature (Sailthru only allows a user lookup up based on an email)
+If you identify a user using their email address, you will be able to view that user's activity using Sailthru's [user lookup](https://my.sailthru.com/reports/user_profile/) feature (Sailthru only allows a user lookup up based on an email).
 
 <!-- Picture of Sailthru User Lookup -->
 
-However, if you send an`identify` call without a `traits.email` and only a `userId` or `anonymousId`, the profile will be created in Sailthru but you will not be able to find that user via their [user lookup](https://my.sailthru.com/reports/user_profile/) feature.
+However, if you send an`identify` call without an email and only a `userId` or `anonymousId`, the profile will be created in Sailthru but you will not be able to find that user via the [user lookup](https://my.sailthru.com/reports/user_profile/) feature.
 
 ### Page
 
@@ -61,7 +77,7 @@ The `page` event relies on the `sailthru_hid` (which is set via `identify`) cook
 
 The URL tracked by `page` is taken from `properties.url` or from `context.page.url` if `properties.url` is not available. The URL *must* be a domain name, otherwise the request will fail.
 
-Sailthru provides an out of band web scraper that will automatically collect contextual information from your pages to power their [**personalization engine**](https://getstarted.sailthru.com/site/personalization-engine/meta-tags/). If the design of your site requires passing these tags to Sailthru manually (Single Page Apps are one example) you can manually pass them via a `tags` property in the page event:
+Sailthru provides an out of band web scraper that will automatically collect contextual information from your pages to power their [**personalization engine**](https://getstarted.sailthru.com/site/personalization-engine/meta-tags/). If the design of your site requires passing these tags to Sailthru manually (Single Page Apps are one example) you can manually pass them via a `tags` property in the page event, with `tags` being an array of tag strings:
 
 ```javascript
 analytics.page('Page Name', {
