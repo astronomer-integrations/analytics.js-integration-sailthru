@@ -62,6 +62,7 @@ describe('Sailthru', function() {
     describe('#initialize', function() {
       it('should call load', function() {
         analytics.initialize();
+
         analytics.called(sailthru.load);
       });
     });
@@ -84,6 +85,7 @@ describe('Sailthru', function() {
 
     it('should call integration', function() {
       sailthru._integration('customEvent', { id: 'tim' });
+
       analytics.called(window.Sailthru.integration, 'customEvent', { id: 'tim' });
     });
   });
@@ -128,6 +130,57 @@ describe('Sailthru', function() {
       });
     });
 
+    describe('identify with a custom list trait', function() {
+      it('should sign up user to that list', function() {
+        var traits = {
+          key : '123',
+          email: 'testuser@gmail.com',
+          source : 'home',
+          defaultListName: 'new-list'
+        };
+        analytics.identify('test_user1234', traits);
+
+        analytics.called(sailthru._integration, 'userSignUp', {
+          keys: {
+            email: 'testuser@gmail.com',
+            extid: 'test_user1234'
+          },
+          vars: {
+            key: '123',
+            source: 'home'
+          },
+          optout_email: 'basic',
+          keysconflict: 'merge',
+          lists: {
+            'new-list': 1
+          },
+          email: 'testuser@gmail.com'
+        });
+      });
+    });
+
+    describe('identify with no traits', function() {
+      it('should attempt to sign up user based on userId', function() {
+        var traits = {};
+        analytics.identify('test_user1234', traits);
+
+        analytics.called(sailthru._integration, 'userSignUp', {
+          keys: {
+            email: null,
+            extid: 'test_user1234'
+          },
+          optout_email: 'basic',
+          keysconflict: 'merge',
+          vars: {},
+          lists: {
+            'test-list': 1
+          },
+          id: 'test_user1234',
+          key: 'extid'
+        });
+      });
+    });
+
     describe('page', function() {
       it('shoulld send a pageview', function() {
         var props = {
@@ -143,6 +196,17 @@ describe('Sailthru', function() {
         analytics.called(sailthru._track, 'pageview', {
           url: 'http://dev-mr.bluecode.co',
           tags: ['tag1', 'tag2']
+        });
+      });
+    });
+
+    describe('page with no properties', function() {
+      it('shoulld send a pageview with a url taken from context.page.url', function() {
+        var props = {};
+        analytics.page('pageview', props);
+
+        analytics.called(sailthru._track, 'pageview', {
+          url: 'http://localhost:9876/context.html'
         });
       });
     });
@@ -220,19 +284,66 @@ describe('Sailthru', function() {
       });
     });
 
+    describe('customEventTrack with PII properties', function() {
+      it('should create a custom event with PII removed', function() {
+        var props = {
+          userId: 'johndoe1234',
+          firstName: 'John',
+          lastName: 'Doe',
+          gender: 'Male',
+          city: 'Denver',
+          country:'USA',
+          phone: '(111)-222-33333',
+          state:'CO',
+          zip: '80203',
+          birthday: '01-01-1990',
+          not_pii: 'something'
+        };
+        analytics.track('someCustomEvent', props);
+        analytics.called(sailthru._integration, 'customEvent', {
+          name: 'someCustomEvent',
+          vars: {
+            not_pii: 'something'
+          },
+          id: 'johndoe1234',
+          key: 'extid'
+        });
+      });
+    });
+
+    describe('customEventTrack with no properties', function() {
+      it('should create a custom event based on userId or anonymousId', function() {
+        var props = { anonymousId: 'johndoe1234' };
+        analytics.track('someCustomEvent', props);
+        analytics.called(sailthru._integration, 'customEvent', {
+          name: 'someCustomEvent',
+          vars: {},
+          id: 'johndoe1234',
+          key: 'extid'
+        });
+      });
+    });
+
     describe('userSignUpConfirmedOptIn', function() {
       it('should send a userSignUpConfirmedOptIn event', function() {
         var props = {
           template: 'test-send',
-          email : 'testuser@gmail.com'
+          email : 'testuser@gmail.com', 
+          template_var1: 'var1',
+          template_var2: 'var2',
+          template_var3: 'var3'
         };
         analytics.track('userSignUpConfirmedOptIn', props);
         analytics.called(sailthru._integration, 'userSignUpConfirmedOptIn', {
           template: {
             name: 'test-send'
           },
-          email : 'testuser@gmail.com',
-          vars: {}
+          vars: {
+            template_var1: 'var1',
+            template_var2: 'var2',
+            template_var3: 'var3'
+          },
+          email: 'testuser@gmail.com'
         });
       });
     });
@@ -257,6 +368,7 @@ describe('Sailthru', function() {
       it('should send an addToCart event', function() {
         var props = {
           email: 'testuser@gmail.com',
+          firstName: 'John',
           cart_id: 'skdjsidjsdkdj29j',
           product_id: '507f1f77bcf86cd799439011',
           sku: 'G-32',
@@ -302,7 +414,96 @@ describe('Sailthru', function() {
           incomplete: 1,
           email: 'testuser@gmail.com',
           reminder_template: 'test-reminder',
-          reminder_time: '20 minutes'
+          reminder_time: '+20 minutes'
+        });
+      });
+    });
+
+    describe('productAdded with no product information', function() {
+      it('should send an item with default information', function() {
+        var props = {
+          email: 'testuser@gmail.com'
+        };
+        analytics.track('productAdded', props);
+        analytics.called(sailthru._integration, 'addToCart', {
+          items: [
+            {
+              qty: 1,
+              title: '',
+              price: 0,
+              id: null,
+              url: 'http://localhost:9876/context.html/null',
+              images: {
+                full: {
+                  url: ''
+                },
+                thumb: {
+                  url: ''
+                }
+              },
+              vars: {}
+            }
+          ],
+          incomplete: 1,
+          email: 'testuser@gmail.com',
+          reminder_template: 'test-reminder',
+          reminder_time: '+20 minutes'
+        });
+      });
+    });
+
+    describe('productAdded with reminderTemplate and reminderTime properties', function() {
+      it('should send an addToCart event with those properties', function() {
+        var props = {
+          email: 'testuser@gmail.com',
+          cart_id: 'skdjsidjsdkdj29j',
+          product_id: '507f1f77bcf86cd799439011',
+          sku: 'G-32',
+          category: 'Games',
+          name: 'Monopoly: 3rd Edition',
+          brand: 'Hasbro',
+          variant: '200 pieces',
+          price: 18.99,
+          quantity: 1,
+          coupon: 'MAYDEALS',
+          position: 3,
+          url: 'https://www.example.com/product/path',
+          image_url: 'https://www.example.com/product/path.jpg',
+          reminderTemplate: 'some-reminder-template',
+          reminderTime: '10 weeks'
+        };
+        analytics.track('productAdded', props);
+        analytics.called(sailthru._integration, 'addToCart', {
+          items: [
+            {
+              qty: 1,
+              title: 'Monopoly: 3rd Edition',
+              price: 1899,
+              id: '507f1f77bcf86cd799439011',
+              url: 'https://www.example.com/product/path',
+              images: {
+                full: {
+                  url: 'https://www.example.com/product/path.jpg'
+                },
+                thumb: {
+                  url: ''
+                }
+              },
+              vars: {
+                cart_id: 'skdjsidjsdkdj29j',
+                sku: 'G-32',
+                category: 'Games',
+                brand: 'Hasbro',
+                variant: '200 pieces',
+                coupon: 'MAYDEALS',
+                position: 3
+              }
+            }
+          ],
+          incomplete: 1,
+          email: 'testuser@gmail.com',
+          reminder_template: 'some-reminder-template',
+          reminder_time: '+10 weeks'
         });
       });
     });
@@ -311,6 +512,7 @@ describe('Sailthru', function() {
       it('should send an addToCart event', function() {
         var props = {
           email: 'testuser@gmail.com',
+          firstName: 'John',
           cart_id: 'skdjsidjsdkdj29j',
           product_id: '507f1f77bcf86cd799439011',
           sku: 'G-32',
@@ -332,7 +534,56 @@ describe('Sailthru', function() {
           incomplete: 1,
           email: 'testuser@gmail.com',
           reminder_template: 'test-reminder',
-          reminder_time: '20 minutes'
+          reminder_time: '+20 minutes'
+        });
+      });
+    });
+
+    describe('productRemoved with no product information', function() {
+      it('should send an addToCart event with no items', function() {
+        var props = {
+          email: 'testuser@gmail.com'
+        };
+        analytics.track('productRemoved', props);
+        analytics.called(sailthru._integration, 'addToCart', {
+          items: [],
+          incomplete: 1,
+          email: 'testuser@gmail.com',
+          reminder_template: 'test-reminder',
+          reminder_time: '+20 minutes'
+        });
+      });
+    });
+
+    describe('productRemoved with reminderTemplate and reminderTime properties', function() {
+      it('should send an addToCart event with those properties', function() {
+        var props = {
+          email: 'testuser@gmail.com',
+          firstName: 'John',
+          cart_id: 'skdjsidjsdkdj29j',
+          product_id: '507f1f77bcf86cd799439011',
+          sku: 'G-32',
+          category: 'Games',
+          name: 'Monopoly: 3rd Edition',
+          brand: 'Hasbro',
+          variant: '200 pieces',
+          price: 18.99,
+          quantity: 1,
+          coupon: 'MAYDEALS',
+          position: 3,
+          url: 'https://www.example.com/product/path',
+          image_url: 'https://www.example.com/product/path.jpg',
+          other_var: 'some value',
+          reminderTemplate: 'some-reminder-template',
+          reminderTime: '10 weeks'
+        };
+        analytics.track('productRemoved', props);
+        analytics.called(sailthru._integration, 'addToCart', {
+          items: [],
+          incomplete: 1,
+          email: 'testuser@gmail.com',
+          reminder_template: 'some-reminder-template',
+          reminder_time: '+10 weeks'
         });
       });
     });
@@ -341,6 +592,7 @@ describe('Sailthru', function() {
       it('shoulld send an addToCart event', function() {
         var props = {
           email: 'testuser@gmail.com',
+          firstName: 'John',
           order_id: '50314b8e9bcf000000000000',
           affiliation: 'Google Store',
           total: 27.5,
@@ -441,7 +693,79 @@ describe('Sailthru', function() {
           },
           email: 'testuser@gmail.com',
           reminder_template: 'test-reminder',
-          reminder_time: '20 minutes'      
+          reminder_time: '+20 minutes'      
+        });
+      });
+    });
+
+    describe('orderUpdated with no product information', function() {
+      it('shoulld send an addToCart event with no items', function() {
+        var props = {
+          email: 'testuser@gmail.com',
+          products: []
+        };
+        analytics.track('orderUpdated', props);
+        analytics.called(sailthru._integration, 'addToCart', {
+          items: [],
+          adjustments: [],
+          incomplete: 1,
+          vars: {},
+          email: 'testuser@gmail.com',
+          reminder_template: 'test-reminder',
+          reminder_time: '+20 minutes'
+        });
+      });
+    });
+
+    describe('orderUpdated with reminderTemplate and reminderTime properties', function() {
+      it('shoulld send an addToCart event with those properties', function() {
+        var props = {
+          email: 'testuser@gmail.com',
+          firstName: 'John',
+          products: [
+            {
+              product_id: '507f1f77bcf86cd799439011',
+              sku: '45790-32',
+              name: 'Monopoly: 3rd Edition',
+              price: 19,
+              quantity: 1,
+              category: 'Games',
+              url: 'https://www.example.com/product/path',
+              image_url: 'https://www.example.com/product/path.jpg'
+            }
+          ],
+          reminderTemplate: 'some-reminder-template',
+          reminderTime: '10 weeks'
+        };
+        analytics.track('orderUpdated', props);
+        analytics.called(sailthru._integration, 'addToCart', {
+          items: [
+            {
+              qty: 1,
+              title: 'Monopoly: 3rd Edition',
+              price: 1900,
+              id: '507f1f77bcf86cd799439011',
+              url: 'https://www.example.com/product/path',
+              images: {
+                full: {
+                  url: 'https://www.example.com/product/path.jpg'
+                },
+                thumb: {
+                  url: ''
+                }
+              },
+              vars: {
+                sku: '45790-32',
+                category: 'Games'
+              }
+            }
+          ],
+          adjustments: [],
+          incomplete: 1,
+          vars: {},
+          email: 'testuser@gmail.com',
+          reminder_template: 'some-reminder-template',
+          reminder_time: '+10 weeks' 
         });
       });
     });
@@ -450,6 +774,7 @@ describe('Sailthru', function() {
       it('shoulld send an purchase event', function() {
         var props = {
           email: 'testemail@gmail.com',
+          firstName: 'John',
           order_id: '50314b8e9bcf000000000000',
           affiliation: 'Google Store',
           total: 27.5,
@@ -549,6 +874,39 @@ describe('Sailthru', function() {
           },
           email: 'testemail@gmail.com',
           send_template: 'test-send'
+        });
+      });
+    });
+
+    describe('orderComplete with no properties', function() {
+      it('shoulld send an purchase event with no items', function() {
+        var props = { userId: 'johndoe1234' };
+        analytics.track('orderCompleted', props);
+        analytics.called(sailthru._integration, 'purchase', {
+          items: [],
+          adjustments: [],
+          vars: {},
+          id: 'johndoe1234',
+          key: 'extid',
+          send_template: 'test-send'
+        });
+      });
+    });
+
+    describe('orderComplete with sendTemplate property', function() {
+      it('shoulld send an purchase event with that property', function() {
+        var props = { 
+          userId: 'johndoe1234',
+          sendTemplate: 'some-send-template'
+        };
+        analytics.track('orderCompleted', props);
+        analytics.called(sailthru._integration, 'purchase', {
+          items: [],
+          adjustments: [],
+          vars: {},
+          id: 'johndoe1234',
+          key: 'extid',
+          send_template: 'some-send-template'      
         });
       });
     });

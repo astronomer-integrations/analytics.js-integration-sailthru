@@ -33,7 +33,7 @@ The Sailthru server-side destination will allow you to add users, send custom ev
 
 ### Identify
 
-`identify` events map to the [userSignUp](https://getstarted.sailthru.com/developers/api-client/javascript/#userSignUp) event in the Sailthru Javascript API Library.
+`identify` events map to the [`userSignUp`](https://getstarted.sailthru.com/developers/api-client/javascript/#userSignUp) event in the Sailthru Javascript API Library.
 
 You can use `identify` to create a new user profile or to update an existing user profile if the email address given already exists as a user profile key.
 
@@ -70,7 +70,7 @@ However, if you send an`identify` call without an email and only a `userId` or `
 
 ### Page
 
-When you call `page`, we will trigger a Sailthru [pageview](https://getstarted.sailthru.com/integrations/google-tag-manager/track/) track event and you can see the calls populate in the [Sailthru Realtime Dashboard](https://my.sailthru.com/reports/dashboard/).
+When you call `page`, we will trigger a Sailthru [`pageview`](https://getstarted.sailthru.com/integrations/google-tag-manager/track/) track event and you can see the calls populate in the [Sailthru Realtime Dashboard](https://my.sailthru.com/reports/dashboard/).
 
 The `page` event relies on the `sailthru_hid` (which is set via `identify`) cookie to identify which user is visiting a page. If a user's `sailthru_hid` cookie is set, you can track their pageviews on their profile via [user lookup](https://my.sailthru.com/reports/user_profile/). If the `sailthru_hid` cookie is not set, pageviews will not be tracked properly.
 
@@ -86,7 +86,9 @@ analytics.page('Page Name', {
 
 ### Track Custom Events
 
-We map `Product Added`, `Product Removed`, and `Order Updated` events to the [`addToCart`](https://getstarted.sailthru.com/developers/api-client/javascript/#addToCart) Sailthru event representing an incomplete purchase, and `Order Completed` events to the [`purchase`](https://getstarted.sailthru.com/developers/api-client/javascript/#purchase) Sailthru event representing a completed purchase. All other Analytics.js Ecommerce Events will be mapped to [`customEvent`](https://getstarted.sailthru.com/developers/api-client/javascript/#customEvent) with the same name. **Important: You must have each custom event mapped in Sailthru using the [Lifecycle Optimizer](https://my.sailthru.com/lifecycle_optimizer#/) in order to leverage the custom event**. Be sure that the **Status** is set to **Active**. You can reach the [Lifecycle Optimizer](https://my.sailthru.com/lifecycle_optimizer#/) through **Communications > Lifecycle Optimizer** in your Sailthru Dashboard:
+We map `Product Added`, `Product Removed`, and `Order Updated` events to the [`addToCart`](https://getstarted.sailthru.com/developers/api-client/javascript/#addToCart) Sailthru event representing an incomplete purchase, and `Order Completed` events to the [`purchase`](https://getstarted.sailthru.com/developers/api-client/javascript/#purchase) Sailthru event representing a completed purchase. All other Analytics.js Ecommerce Events will be mapped to [`customEvent`](https://getstarted.sailthru.com/developers/api-client/javascript/#customEvent) with the same name.
+
+**Important: You must have each custom event mapped in Sailthru using the [Lifecycle Optimizer](https://my.sailthru.com/lifecycle_optimizer#/) in order to leverage the custom event**. Be sure that the **Status** is set to **Active**. You can reach the [Lifecycle Optimizer](https://my.sailthru.com/lifecycle_optimizer#/) through **Communications > Lifecycle Optimizer** in your Sailthru Dashboard:
 
 <!-- sailthru-lifecycle-optimizer.png -->
 
@@ -261,7 +263,7 @@ analytics.track('Order Completed', {
 
 To support Sailthru's [Abandoned Carts](https://getstarted.sailthru.com/lo/automate-abandoned-cart-reminders/) system, we offer the option to configure a `reminderTemplate` and `reminderTime` for `Product Added`, `Product Removed`, and `Order Updated` events. These are transactional emails that are sent after a user "abandons" their cart, or has an incomplete purchase on their account for a certain period of time.
 
-Both values are configured in the [MetaRouter UI](http://app.metarouter.io/). If you configure a `reminderTemplate`, you must configure a `reminderTime` as well. The `reminderTemplate` must match the public name of a template previously configured in [Sailthru's UI](https://my.sailthru.com/templates-list). `reminderTime` must be a unit of time, such as `+60 minutes`, `+24 hours`, or `+2 weeks`. To read more about how Sailthru calculates time, refer to their [time documentation](https://getstarted.sailthru.com/developers/zephyr-functions-library/time/).
+Both values are configured in the [MetaRouter UI](http://app.metarouter.io/). If you configure a `reminderTemplate`, you must configure a `reminderTime` as well. The `reminderTemplate` must match the public name of a template previously configured in [Sailthru's UI](https://my.sailthru.com/templates-list). `reminderTime` must be a unit of time, such as `60 minutes`, `24 hours`, or `2 weeks`. We will handle adding the `+` to the front of the time value. To read more about how Sailthru calculates time, refer to their [time documentation](https://getstarted.sailthru.com/developers/zephyr-functions-library/time/).
 
 You can also pass in `reminderTemplate` and `reminderTime` as properties on the track event object under `properties.reminderTime` or as a destination option like so:
 
@@ -282,7 +284,7 @@ analytics.track('Product Added', {
   integrations: {
     Sailthru: {
     reminderTemplate: 'abandoned cart',
-    reminderTime: '+20 minutes'
+    reminderTime: '20 minutes'
     }
   }
 });
@@ -306,7 +308,7 @@ analytics.track('userSignUpConfirmedOptIn', {
 });
 ```
 
-The name of the opt-in template must match the public name of a template previously configured in [Sailthru's UI](https://my.sailthru.com/templates-list).
+The name of the opt-in template must match the public name of a template previously configured in [Sailthru's UI](https://my.sailthru.com/templates-list). Any additional properties from `event.properties` sent with the event will be mapped to `vars` as template vars that are accessible within the opt-in template.
 
 ### gdprDoNotTrack
 
@@ -352,7 +354,7 @@ The public name of your template which is sent when for a completed purchase. Yo
 
 #### Reminder Time
 
-**Required with Reminder Template** The time frame you will want the email to send. **You must enter a numerical time and field minutes, hours, or weeks** For example: `+60 minutes`, `+24 hours`, or `+2 weeks` are all acceptable values. To read more about how Sailthru calculates time, refer to their [time documentation](https://getstarted.sailthru.com/developers/zephyr-functions-library/time/).
+**Required with Reminder Template** The time frame you will want the email to send. **You must enter a numerical time and field minutes, hours, or weeks** For example: `60 minutes`, `24 hours`, or `2 weeks` are all acceptable values. We will handle adding the `+` to the front of the time value. To read more about how Sailthru calculates time, refer to their [time documentation](https://getstarted.sailthru.com/developers/zephyr-functions-library/time/).
 
 #### API Key (Required)
 
