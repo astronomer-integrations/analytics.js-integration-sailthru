@@ -342,7 +342,7 @@ Select whether to opt out users from email campaigns. Possible options are `none
 
 #### Default List Name
 
-Sailthru best practice dicates every user be added to a list. Configure a default list here, and any new users that sign up using `identify` will automatically be added to the default list. You can also explicitly set your own `defaultListName` through `traits.defaultListName` or via the destination option for `identify` events.
+Sailthru best practice dictates every user be added to a list. Configure a default list here, and any new users that sign up using `identify` will automatically be added to the default list. You can also explicitly set your own `defaultListName` through `traits.defaultListName` or via the destination option for `identify` events.
 
 #### Send Template
 
