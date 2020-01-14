@@ -86,9 +86,9 @@ analytics.page('Page Name', {
 
 ### Track Custom Events
 
-We map `Product Added`, `Product Removed`, and `Order Updated` events to the [`addToCart`](https://getstarted.sailthru.com/developers/api-client/javascript/#addToCart) Sailthru event representing an incomplete purchase, and `Order Completed` events to the [`purchase`](https://getstarted.sailthru.com/developers/api-client/javascript/#purchase) Sailthru event representing a completed purchase. All other Analytics.js Ecommerce Events will be mapped to [`customEvent`](https://getstarted.sailthru.com/developers/api-client/javascript/#customEvent) with the same name.
+We map `Product Added`, `Product Removed`, and `Order Updated` events to the [`addToCart`](https://getstarted.sailthru.com/developers/api-client/javascript/#addToCart) Sailthru event representing an incomplete purchase, and `Order Completed` events to the [`purchase`](https://getstarted.sailthru.com/developers/api-client/javascript/#purchase) Sailthru event representing a completed purchase. All other Analytics.js Ecommerce Events will be mapped to a [`customEvent`](https://getstarted.sailthru.com/developers/api-client/javascript/#customEvent) with the same name.
 
-**Important: You must have each custom event mapped in Sailthru using the [Lifecycle Optimizer](https://my.sailthru.com/lifecycle_optimizer#/) in order to leverage the custom event**. Be sure that the **Status** is set to **Active**. You can reach the [Lifecycle Optimizer](https://my.sailthru.com/lifecycle_optimizer#/) through **Communications > Lifecycle Optimizer** in your Sailthru Dashboard:
+**Important: You must have each custom event mapped in Sailthru using the [Lifecycle Optimizer](https://my.sailthru.com/lifecycle_optimizer#/) in order to leverage the custom event**. Be sure that the **Status** is set to **Active**. You can reach the Lifecycle Optimizer through **Communications > Lifecycle Optimizer** in your Sailthru Dashboard:
 
 <!-- sailthru-lifecycle-optimizer.png -->
 
@@ -259,9 +259,9 @@ analytics.track('Order Completed', {
 });
 ```
 
-### Abandoned Cart Events
+### Abandoned Cart Event Option
 
-To support Sailthru's [Abandoned Carts](https://getstarted.sailthru.com/lo/automate-abandoned-cart-reminders/) system, we offer the option to configure a `reminderTemplate` and `reminderTime` for `Product Added`, `Product Removed`, and `Order Updated` events. These are transactional emails that are sent after a user "abandons" their cart, or has an incomplete purchase on their account for a certain period of time.
+To support Sailthru's [Abandoned Carts](https://getstarted.sailthru.com/lo/automate-abandoned-cart-reminders/) system, we offer the option to configure a `reminderTemplate` and `reminderTime` for `Product Added`, `Product Removed`, and `Order Updated` events. These configure transactional emails to be sent after a user "abandons" their cart, or has an incomplete purchase on their account for a certain period of time.
 
 Both values are configured in the [MetaRouter UI](http://app.metarouter.io/). If you configure a `reminderTemplate`, you must configure a `reminderTime` as well. The `reminderTemplate` must match the public name of a template previously configured in [Sailthru's UI](https://my.sailthru.com/templates-list). `reminderTime` must be a unit of time, such as `60 minutes`, `24 hours`, or `2 weeks`. We will handle adding the `+` to the front of the time value. To read more about how Sailthru calculates time, refer to their [time documentation](https://getstarted.sailthru.com/developers/zephyr-functions-library/time/).
 
@@ -342,7 +342,7 @@ Select whether to opt out users from email campaigns. Possible options are `none
 
 #### Default List Name
 
-Sailthru best practice dicates every user be added to a list. Configure a default list here, and any new users that sign up using `identify` will automatically be added to the default list. You can also explicitly set your own `defaultListName` through `traits.defaultListName` or via the destination option for `identify` events.
+Sailthru best practice dicates every user be added to a list. Configure a default list here, and any new users that sign up using `identify` will automatically be added to the default list. You can also explicitly set your own `defaultListName` through `properties.defaultListname`, `traits.defaultListName`, or via the destination option for `identify` events.
 
 #### Send Template
 
@@ -350,7 +350,7 @@ The public name of your template which is sent when for a completed purchase. Yo
 
 #### Reminder Template
 
-***Required with Reminder Time** The public name of your template which you first must configure in [Sailthru's UI](https://my.sailthru.com/templates-list).
+**Required with Reminder Time** The public name of your template which you first must configure in [Sailthru's UI](https://my.sailthru.com/templates-list).
 
 #### Reminder Time
 
