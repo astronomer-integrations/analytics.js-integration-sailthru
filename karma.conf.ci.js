@@ -33,6 +33,7 @@ var customLaunchers = {
     browserName: 'safari',
     version: '9.0'
   },
+  // eslint-disable-next-line
   // FIXME(ndhoule): Bad IE7/8 support in testing packages make these fail
   // sl_ie_7: {
   //   base: 'SauceLabs',
@@ -44,6 +45,7 @@ var customLaunchers = {
   //   browserName: 'internet explorer',
   //   version: '8'
   // },
+// eslint-disable-next-line
   // FIXME(ndhoule): Once Karma fixes postMessage issues in 1.x, re-enable this
   // https://github.com/karma-runner/karma/issues/2239
   // sl_ie_9: {
