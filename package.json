@@ -1,6 +1,6 @@
 {
   "name": "@astronomerio/analytics.js-integration-sailthru",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The Sailthru analytics.js integration",
   "main": "lib/index.js",
   "scripts": {
